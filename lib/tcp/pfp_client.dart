@@ -3,12 +3,11 @@ import 'dart:collection';
 import 'dart:io';
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:pfpcl/models/party_packet.dart';
 import 'package:pfpcl/tcp/message_connection.dart';
 
 class TcpClient implements MessageConnection {
-  static const _maxHistory = 500;
+  static const _maxHistory = 50;
 
   Socket? _socket;
   StreamSubscription<String>? _subscription;
@@ -48,22 +47,11 @@ class TcpClient implements MessageConnection {
     if(_history.length > _maxHistory) _history.removeLast();
     _messages.add(message);
 
-    try {
-      final decoded = jsonDecode(message);
-      if(decoded is! Map<String, dynamic>) return;
+    final party = PartyPacket.tryParseMembers(message);
+    if(party == null) return;
 
-      final members = decoded['members'];
-      if(members is! List) return;
-
-      final party = members
-        .map((element) => PartyPacket.fromJson(element as Map<String, dynamic>))
-        .toList(growable: false);
-      
-      _latest = party;
-      _packets.add(party);
-    } catch (exception) {
-      debugPrint('Packet rejected: $exception');
-    }
+    _latest = party;
+    _packets.add(party);
   }
 
   @override

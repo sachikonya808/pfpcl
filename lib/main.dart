@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:pfpcl/settings/connection_settings.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
+import 'package:pfpcl/service/service_connection.dart';
+import 'package:pfpcl/settings/connection_settings.dart';
 import 'package:pfpcl/tcp/message_connection.dart';
-import 'package:pfpcl/tcp/pfp_client.dart';
-import 'package:pfpcl/screens/messages_page.dart';
+import 'package:pfpcl/screens/party_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  FlutterForegroundTask.initCommunicationPort();
+  ServiceConnection.initService();
 
-  final MessageConnection connection = TcpClient();
+  final MessageConnection connection = ServiceConnection();
   final settings = await ConnectionSettings.load();
   runApp(PFPClient(connection: connection, settings: settings));
 }
