@@ -3,6 +3,8 @@ import 'dart:collection';
 import 'dart:io';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
+import 'package:pfpcl/models/party_packet.dart';
 import 'package:pfpcl/tcp/message_connection.dart';
 
 class TcpClient implements MessageConnection {
@@ -12,7 +14,9 @@ class TcpClient implements MessageConnection {
   StreamSubscription<String>? _subscription;
   ConnectionStatus _currentStatus = ConnectionStatus.disconnected;
   final List<String> _history = [];
+  List<PartyPacket>? _latest;
 
+  final _packets = StreamController<List<PartyPacket>>.broadcast();
   final _messages = StreamController<String>.broadcast();
   final _status = StreamController<ConnectionStatus>.broadcast();
 
@@ -28,6 +32,12 @@ class TcpClient implements MessageConnection {
   @override
   List<String> get history => UnmodifiableListView(_history);
 
+  @override
+  List<PartyPacket>? get latestPackets => _latest;
+
+  @override
+  Stream<List<PartyPacket>> get packets => _packets.stream;
+
   void _setStatus(ConnectionStatus status) {
     _currentStatus = status;
     _status.add(status);
@@ -35,10 +45,25 @@ class TcpClient implements MessageConnection {
 
   void _onMessage(String message) {
     _history.insert(0, message);
-    
     if(_history.length > _maxHistory) _history.removeLast();
-    
     _messages.add(message);
+
+    try {
+      final decoded = jsonDecode(message);
+      if(decoded is! Map<String, dynamic>) return;
+
+      final members = decoded['members'];
+      if(members is! List) return;
+
+      final party = members
+        .map((element) => PartyPacket.fromJson(element as Map<String, dynamic>))
+        .toList(growable: false);
+      
+      _latest = party;
+      _packets.add(party);
+    } catch (exception) {
+      debugPrint('Packet rejected: $exception');
+    }
   }
 
   @override
@@ -83,6 +108,7 @@ class TcpClient implements MessageConnection {
     _subscription?.cancel();
     _socket?.destroy();
     _messages.close();
+    _packets.close();
     _status.close();
   }
 }

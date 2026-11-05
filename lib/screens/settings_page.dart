@@ -23,11 +23,13 @@ class _SettingsPageState extends State<SettingsPage> {
     super.dispose();
   }
   
-  void _save() {
+  Future<void> _save() async {
     if(!_formKey.currentState!.validate()) return;
     widget.settings.host = _hostController.text.trim();
     widget.settings.port = int.parse(_portController.text.trim());
-    Navigator.pop(context);
+
+    await widget.settings.save();
+    if (mounted) Navigator.pop(context);
   }
 
   @override

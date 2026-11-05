@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:pfpcl/screens/job_icons.dart';
 import 'package:pfpcl/screens/settings_page.dart';
 import 'package:pfpcl/settings/connection_settings.dart';
 import 'package:pfpcl/tcp/message_connection.dart';
@@ -22,7 +23,7 @@ class MessagesPage extends StatefulWidget {
 }
 
 class _MessagesPageState extends State<MessagesPage> {
-  late final StreamSubscription<String> _messageSubscription;
+  late final StreamSubscription<dynamic> _packetSubscription;
   late final StreamSubscription<ConnectionStatus> _statusSubscription;
 
   MessageConnection get _connection => widget.connection;
@@ -32,7 +33,7 @@ class _MessagesPageState extends State<MessagesPage> {
   void initState() {
     super.initState();
 
-    _messageSubscription = _connection.messages.listen((_) {
+    _packetSubscription = _connection.messages.listen((_) {
       if(mounted) setState(() {});
     });
 
@@ -43,7 +44,7 @@ class _MessagesPageState extends State<MessagesPage> {
   
   @override
   void dispose() {
-    _messageSubscription.cancel();
+    _packetSubscription.cancel();
     _statusSubscription.cancel();
 
     super.dispose();
@@ -80,7 +81,7 @@ class _MessagesPageState extends State<MessagesPage> {
   @override
   Widget build(BuildContext context) {
     final status = _connection.currentStatus;
-    final messages = _connection.history;
+    final party = _connection.latestPackets;
 
     final(fabIcon, fabLabel) = switch(status){
       ConnectionStatus.disconnected => (
@@ -116,7 +117,7 @@ class _MessagesPageState extends State<MessagesPage> {
         ],
       ),
       
-      body: messages.isEmpty
+      body: party == null
       ? Center(
         child: Text(
           status == ConnectionStatus.connected
@@ -126,12 +127,24 @@ class _MessagesPageState extends State<MessagesPage> {
         ),
       )
       
-      
-      : ListView.builder(
-          itemCount: messages.length,
-          itemBuilder: (context, index) => ListTile(title: Text(messages[index]),),
-      ),
-      
+      : party.isEmpty
+        ? const Center(child: Text('The server sent an empty list'))
+
+        : ListView.builder(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 88),
+            itemCount: party.length,
+            itemBuilder: (context, index) {
+              final p = party[index];
+              return Card(
+                child: ListTile(
+                  leading: JobIcon(name: p.name, job: p.job),
+                  title: Text(p.name),
+                  subtitle: Text('Job: ${p.job} | Level: ${p.level}'),
+                ),
+              );
+            }
+          ),
+          
       floatingActionButton: FloatingActionButton.extended(
         onPressed: status == ConnectionStatus.connecting ? null : _toggle,
         icon: fabIcon,

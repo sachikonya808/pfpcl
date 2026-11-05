@@ -5,9 +5,11 @@ import 'package:pfpcl/tcp/message_connection.dart';
 import 'package:pfpcl/tcp/pfp_client.dart';
 import 'package:pfpcl/screens/messages_page.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
   final MessageConnection connection = TcpClient();
-  final settings = ConnectionSettings();
+  final settings = await ConnectionSettings.load();
   runApp(PFPClient(connection: connection, settings: settings));
 }
 
