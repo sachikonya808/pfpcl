@@ -13,9 +13,9 @@ class TcpClient implements MessageConnection {
   StreamSubscription<String>? _subscription;
   ConnectionStatus _currentStatus = ConnectionStatus.disconnected;
   final List<String> _history = [];
-  List<PartyPacket>? _latest;
+  PartyPacket? _latest;
 
-  final _packets = StreamController<List<PartyPacket>>.broadcast();
+  final _packets = StreamController<PartyPacket>.broadcast();
   final _messages = StreamController<String>.broadcast();
   final _status = StreamController<ConnectionStatus>.broadcast();
 
@@ -32,10 +32,10 @@ class TcpClient implements MessageConnection {
   List<String> get history => UnmodifiableListView(_history);
 
   @override
-  List<PartyPacket>? get latestPackets => _latest;
+  PartyPacket? get latestPacket => _latest;
 
   @override
-  Stream<List<PartyPacket>> get packets => _packets.stream;
+  Stream<PartyPacket> get packets => _packets.stream;
 
   void _setStatus(ConnectionStatus status) {
     _currentStatus = status;
@@ -47,7 +47,7 @@ class TcpClient implements MessageConnection {
     if(_history.length > _maxHistory) _history.removeLast();
     _messages.add(message);
 
-    final party = PartyPacket.tryParseMembers(message);
+    final party = PartyPacket.tryParse(message);
     if(party == null) return;
 
     _latest = party;
@@ -86,6 +86,7 @@ class TcpClient implements MessageConnection {
     _subscription = null;
     _socket?.destroy();
     _socket = null;
+    _latest = null;
     if(_currentStatus != ConnectionStatus.disconnected) {
       _setStatus(ConnectionStatus.disconnected);
     }

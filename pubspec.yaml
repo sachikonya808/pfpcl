@@ -37,7 +37,7 @@ dependencies:
   shared_preferences: ^2.5.6
   flutter_foreground_task: ^11.0.3
   flutter_local_notifications: ^22.3.3
-
+  dynamic_system_colors: ^1.9.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

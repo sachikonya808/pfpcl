@@ -10,14 +10,14 @@ class ServiceConnection implements MessageConnection{
   static const _maxHistory = 5;
 
   ConnectionStatus _currentStatus = ConnectionStatus.disconnected;
-  List<PartyPacket>? _latest;
+  PartyPacket? _latest;
   final List<String> _history = [];
 
   Map<String, dynamic>? _pendingConnect;
   Completer<void>? _connecting;
 
   final _messages = StreamController<String>.broadcast();
-  final _packets = StreamController<List<PartyPacket>>.broadcast();
+  final _packets = StreamController<PartyPacket>.broadcast();
   final _status = StreamController<ConnectionStatus>.broadcast();
 
   ServiceConnection() {
@@ -54,6 +54,10 @@ class ServiceConnection implements MessageConnection{
   }
 
   void _setStatus(ConnectionStatus status) {
+    if(status == ConnectionStatus.disconnected) {
+      _latest = null;
+    }
+    
     if(status != _currentStatus) {
       _currentStatus = status;
       _status.add(status);
@@ -73,7 +77,7 @@ class ServiceConnection implements MessageConnection{
     if(_history.length > _maxHistory) _history.removeLast();
     _messages.add(line);
 
-    final party = PartyPacket.tryParseMembers(line);
+    final party = PartyPacket.tryParse(line);
     if(party == null) return;
 
     _latest = party;
@@ -176,13 +180,13 @@ class ServiceConnection implements MessageConnection{
   List<String> get history => UnmodifiableListView(_history);
 
   @override
-  List<PartyPacket>? get latestPackets => _latest;
+  PartyPacket? get latestPacket => _latest;
 
   @override
   Stream<String> get messages => _messages.stream;
 
   @override
-  Stream<List<PartyPacket>> get packets => _packets.stream;
+  Stream<PartyPacket> get packets => _packets.stream;
 
   @override
   Stream<ConnectionStatus> get status => _status.stream;

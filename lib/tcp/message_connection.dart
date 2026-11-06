@@ -7,8 +7,8 @@ abstract class MessageConnection {
   Stream<ConnectionStatus> get status;
   ConnectionStatus get currentStatus;
 
-  Stream<List<PartyPacket>> get packets;
-  List<PartyPacket>? get latestPackets;
+  Stream<PartyPacket> get packets;
+  PartyPacket? get latestPacket;
 
   List<String> get history;
 

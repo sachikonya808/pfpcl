@@ -1,3 +1,4 @@
+import 'package:dynamic_system_colors/dynamic_system_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
@@ -22,19 +23,33 @@ class PFPClient extends StatelessWidget {
 
   const PFPClient({super.key, required this.connection, required this.settings});
 
+  //Fallback
+  static final _fallbackSeed = Colors.indigo.shade900;
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter TCP Demo',
-      theme: ThemeData(
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
-      ),
+    return DynamicColorBuilder(
+      builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
+        final lightScheme = lightDynamic ??
+          ColorScheme.fromSeed(seedColor: _fallbackSeed);
+        final darkScheme = darkDynamic ??
+          ColorScheme.fromSeed(
+            seedColor: _fallbackSeed,
+            brightness: Brightness.dark
+          );
 
-      home: MessagesPage(
-        title: 'Flutter Demo Home Page', 
-        connection: connection,
-        settings: settings
-      ),
+        return MaterialApp(
+          title: 'PF Phone Link - Client',
+          theme: ThemeData(colorScheme: lightScheme, useMaterial3: true),
+          darkTheme: ThemeData(colorScheme: darkScheme, useMaterial3: true),
+          themeMode: ThemeMode.system,
+
+          home: MessagesPage(
+            title: 'PFPL: Party Members', 
+            connection: connection,
+            settings: settings
+          ),
+        );
+      },
     );
   }
 }

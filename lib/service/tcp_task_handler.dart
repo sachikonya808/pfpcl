@@ -5,7 +5,7 @@ import 'package:pfpcl/models/party_packet.dart';
 import 'package:pfpcl/service/full_party_notifier.dart';
 
 import 'package:pfpcl/tcp/message_connection.dart';
-import 'package:pfpcl/tcp/pfp_client.dart';
+import 'package:pfpcl/tcp/tcp_client.dart';
 
 @pragma('vm:entry-point')
 void startCallback() {
@@ -23,6 +23,7 @@ class TcpTaskHandler extends TaskHandler {
   int? _memberCount;
   String? _userName;
   String? _userJob;
+  String? _duty;
 
   static const _partySize = 8;
   final _alerts = FPNotifier();
@@ -38,13 +39,14 @@ class TcpTaskHandler extends TaskHandler {
       _lastLine = line;
       FlutterForegroundTask.sendDataToMain({'type': 'message', 'line': line});
       
-      final party = PartyPacket.tryParseMembers(line);
+      final party = PartyPacket.tryParse(line);
       if(party != null) {
-        _memberCount = party.length;
-        _userName = party[0].name;
-        _userJob = party[0].job;
+        _memberCount = party.partyMembers.length;
+        _userName = party.partyMembers[0].name;
+        _userJob = party.partyMembers[0].job;
+        _duty = party.duty;
         _refreshNotification();
-        _checkIfPartyFull(party.length);
+        _checkIfPartyFull(party.partyMembers.length);
       }
     });
     
@@ -70,7 +72,7 @@ class TcpTaskHandler extends TaskHandler {
         ConnectionStatus.disconnected => 'Disconnected'
       },
       notificationText: (status == ConnectionStatus.connected && _memberCount != null)
-        ? '$_userName | $_userJob | $_memberCount/8'
+        ? '$_userName | $_userJob\n$_duty | $_memberCount/8'
         : _target
     );
   }
@@ -91,8 +93,8 @@ class TcpTaskHandler extends TaskHandler {
 
     if(above && !_isPartyFull) {
       _alerts.show(
-        'The Party has filled!', 
-        '$count/$_partySize'
+        'The party has filled!', 
+        '$_duty'
       );
     }
 

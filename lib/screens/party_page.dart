@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:pfpcl/screens/job_icons.dart';
+import 'package:pfpcl/screens/member_tile.dart';
 import 'package:pfpcl/screens/settings_page.dart';
 import 'package:pfpcl/settings/connection_settings.dart';
 import 'package:pfpcl/tcp/message_connection.dart';
@@ -81,7 +81,7 @@ class _MessagesPageState extends State<MessagesPage> {
   @override
   Widget build(BuildContext context) {
     final status = _connection.currentStatus;
-    final party = _connection.latestPackets;
+    final party = _connection.latestPacket;
 
     final(fabIcon, fabLabel) = switch(status){
       ConnectionStatus.disconnected => (
@@ -112,7 +112,7 @@ class _MessagesPageState extends State<MessagesPage> {
           IconButton(
             onPressed: _openSettings, 
             icon: const Icon(Icons.settings),
-            tooltip: 'Connection Settings',
+            tooltip: 'Connection Settings'
           )
         ],
       ),
@@ -121,34 +121,39 @@ class _MessagesPageState extends State<MessagesPage> {
       ? Center(
         child: Text(
           status == ConnectionStatus.connected
-            ? 'Connected. Waiting for messages...'
+            ? 'Connected. Waiting for updates...'
             : 'Not connected (IP: ${_settings.host} | Port: ${_settings.port})',
-          textAlign: TextAlign.center,
+          textAlign: TextAlign.center
         ),
       )
       
-      : party.isEmpty
-        ? const Center(child: Text('The server sent an empty list'))
-
-        : ListView.builder(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 88),
-            itemCount: party.length,
-            itemBuilder: (context, index) {
-              final p = party[index];
-              return Card(
-                child: ListTile(
-                  leading: JobIcon(name: p.name, job: p.job),
-                  title: Text(p.name),
-                  subtitle: Text('Job: ${p.job} | Level: ${p.level}'),
-                ),
-              );
-            }
+      : Column(
+        children: [
+          Padding(
+            padding: const EdgeInsetsGeometry.fromLTRB(16, 16, 16, 4),
+            child: Text(
+              party.duty,
+              style: Theme.of(context).textTheme.headlineSmall,
+              textAlign: TextAlign.center
+            ),
           ),
+
+          Expanded(
+            child: party.partyMembers.isEmpty
+              ? const Center(child: Text('No party members found (Are you in a CW Party?)'))
+              : ListView.builder(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 88),
+                itemCount: party.partyMembers.length,
+                itemBuilder: (context, index) => MemberTile(partyMember: party.partyMembers[index])
+              )
+          )
+        ],
+      ),
           
       floatingActionButton: FloatingActionButton.extended(
         onPressed: status == ConnectionStatus.connecting ? null : _toggle,
         icon: fabIcon,
-        label: Text(fabLabel),
+        label: Text(fabLabel)
       )
     );
   }
